@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MediaPipe Pose Estimation</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../statics/index.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='../statics/index.css') }}">
+</head>
+
+<body>
+
+
+
+  <nav class="navMenu" id="navbar" >
+    <h4 href="/">MediaPipe Pose Estimation</h4>
+    <a href="/" id="MediaPipe">MediaPipe</a>
+    <a href="/movenet" id="">Movenet</a>
+    <a href="/posenet" id="">OpenPose</a>
+    <a href="/upload" id="">Upload Video</a>
+
+
+
+   
+    <div style="margin-left:auto;" >
+        <a > <i style= "transform: translateY(-5px);" class="fas fa-adjust fa-lg"></i></a>
+        <input type="checkbox" id="darkModeToggle" class="light-switch">
+        <label for="darkModeToggle" class="light-switch-label">
+          <span class="light-switch-inner"></span>
+          <span class="light-switch-slider"></span>
+        </label>
+   </div>
+  
+   <script>
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const body = document.body;
+  
+
+    const isDarkMode = localStorage.getItem('darkMode');
+  
+   
+    if (isDarkMode === 'true') {
+      darkModeToggle.checked = true;
+      body.classList.add('dark-mode');
+    }
+  
+    darkModeToggle.addEventListener('change', () => {
+      if (darkModeToggle.checked) {
+        body.classList.add('dark-mode');
+        localStorage.setItem('darkMode', 'true');
+      } else {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('darkMode', 'false');
+      }
+    });
+  </script>
+    <button type="button" class="btn btn-primary"  id="" onclick="logout()">Sign Out</button> 
+</nav>
+<br>
+
+
+<div class="container">
+    <br>
+    <div class="mx-auto" style="width: 700px;">
+        <h2>Upload the picture which you want to predict</h2>
+    </div>
+
+    <br><br><br>
+
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <div class="input-group mb-3">
+          <input type="file" name="file" class="form-control" id="inputGroupFile02">
+          <div class="col-auto">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="api" value="mediapipe" id="mediapipeRadio">
+              <label class="form-check-label" for="mediapipeRadio">MediaPipe</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="api" value="movenet" id="movenetRadio">
+              <label class="form-check-label" for="movenetRadio">MoveNet</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="api" value="openpose" id="openposeRadio">
+              <label class="form-check-label" for="openposeRadio">OpenPose</label>
+            </div>
+          </div>
+          <button type="submit" name="submit_btn" value="Upload" class="btn btn-primary mb-3">Submit</button>
+        </div>
+
+         
+   
+      </form>
+    </form>
+    
+</div>
+
+<br>
+<div class="col-auto">
+    <div class="mx-auto" style="width: 280px;">
+        <h2 style="color: blue;">{{label}}</h2>
+        {% if label %}
+        <br><img src="{{img_path}}" class="img-fluid" alt="...">
+        {% endif %}
+    </div>
+</div>
+
+
+
+<table class="table mt-5">
+    <thead>
+        <tr>
+            <th>Metrics</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Percentage of Correct Parts (PCP)</td>
+            <td>{{ pcp_value }}</td>
+        </tr>
+        <tr>
+            <td>Percentage of Correct Key-points (PCK)</td>
+            <td>{{ pck_value }}</td>
+        </tr>
+        <tr>
+            <td>Percentage of Detected Joints (PDJ)</td>
+            <td>{{ pdj_value }}</td>
+        </tr>
+        <tr>
+            <td>Object Keypoint Similarity (OKS) based mAP</td>
+            <td>{{ oks_map_value }}</td>
+        </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
