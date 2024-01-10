@@ -1,3 +1,5 @@
+import subprocess
+import sys
 import time
 import cv2
 from flask import Flask, render_template, Response,request
@@ -6,6 +8,9 @@ import math
 import demo_singlepose
 import numpy as np
 import v2_openpose
+import threading
+import os
+import stat
 
 app = Flask(__name__, static_folder='statics', static_url_path='/statics')
 app.add_url_rule('/statics/<path:filename>',
@@ -44,32 +49,59 @@ def uploadVideo():
     file.save(video_path)
 
     api = request.form.get('api') 
+    t_list = []
+    t1 = threading.Thread(target=runMediaPipe,args=())
+    t_list.append(t1)
+    t2 = threading.Thread(target=runMoveNet,args=())
+    t_list.append(t2)
+    t3 = threading.Thread(target=runOpenpose,args=())
+    t_list.append(t3)
 
-    if api == 'mediapipe':
-        gen = gen_video()
-        for _ in gen:
-            pass
+    # 開始工作
+    for t in t_list:
+        t.start()
     
-        img_path = "path/to/processed/image.jpg" 
-    elif api == 'movenet':
-        gen=generate_video_movenet()
-        for _ in gen:
-            pass
-  
-        img_path = "path/to/processed/image.jpg"  
-    elif api == 'openpose':
- 
-        gen=v2_openpose.genOpenposeVideo()
-        for _ in gen:
-            pass
-  
-        img_path = "path/to/processed/image.jpg" 
-    else:
-      
-        return render_template("upload.html", label="Invalid API selected")
+    # 調整多程順序
+    for t in t_list:
+        t.join()
+    # Example usage
+    mp4_file_path = '/Users/jonathan/Downloads/FYP-VisionProWeb/output_video/outputMediaPipe.mp4'
+    open_mp4_file(mp4_file_path)
+    mp4_file_path = '/Users/jonathan/Downloads/FYP-VisionProWeb/output_video/outputMovenet.mp4'
+    open_mp4_file(mp4_file_path)
+    mp4_file_path = '/Users/jonathan/Downloads/FYP-VisionProWeb/output_video/outputOpenpose.mp4'
+    open_mp4_file(mp4_file_path)
+    return render_template("upload.html")
 
-    return render_template("upload.html", img_path=img_path)
-    
+def open_mp4_file(file_path):
+    try:
+        if sys.platform.startswith('darwin'):  # macOS
+            subprocess.call(['open', file_path])
+        elif sys.platform.startswith('linux'):  # Linux
+            subprocess.call(['xdg-open', file_path])
+        elif sys.platform.startswith('win'):  # Windows
+            subprocess.call(['cmd', '/c', 'start', '', file_path])
+        else:
+            print("Unsupported platform: " + sys.platform)
+    except OSError:
+        print("Error opening MP4 file.")
+
+
+ # if api == 'mediapipe':
+def runMediaPipe():
+    gen = gen_video()
+    for _ in gen:
+        pass
+# elif api == 'movenet':
+def runMoveNet():
+    gen=generate_video_movenet()
+    for _ in gen:
+        pass
+# elif api == 'openpose':
+def runOpenpose():
+    gen=v2_openpose.genOpenposeVideo()
+    for _ in gen:
+        pass
 
 @app.route('/pose_metrics')
 def calculate_pose_metrics(pose_landmarks):
@@ -109,7 +141,17 @@ def calculate_joint_angle_mediapipe(a, b, c):
 
     if angle > 180.0:
         angle = 360 - angle
-    print(angle)
+    # print(angle)
+    return angle
+
+def calculate_joint_angle_mediapipe_360(a, b, c):
+    a_coords = np.array([a.x, a.y, a.z])  # First
+    b_coords = np.array([b.x, b.y, b.z])  # Mid
+    c_coords = np.array([c.x, c.y, c.z])  # End
+
+    radians = np.arctan2(c_coords[1] - b_coords[1], c_coords[0] - b_coords[0]) - np.arctan2(a_coords[1] - b_coords[1], a_coords[0] - b_coords[0])
+    angle = np.abs(radians * 180.0 / np.pi)
+    # print(angle)
     return angle
 
 def calculate_angle_newnew(a, b, c):
@@ -125,7 +167,7 @@ def calculate_angle_newnew(a, b, c):
     print(angle)
     return angle
 
-def gen():
+def gen(model):
     previous_time = 0
     mpDraw = mp.solutions.drawing_utils
     my_pose = mp.solutions.pose
@@ -140,20 +182,100 @@ def gen():
         result = pose.process(imgRGB)
 
         if result.pose_landmarks:
-            mpDraw.draw_landmarks(img, result.pose_landmarks, connections)
-            pcp, pck, pdj, oks_map = calculate_pose_metrics(result.pose_landmarks)
-    
-            print(result.pose_landmarks.landmark[11])
-            print(result.pose_landmarks.landmark[13])
-            print(result.pose_landmarks.landmark[15])
+                mpDraw.draw_landmarks(img, result.pose_landmarks, connections)
+                pcp, pck, pdj, oks_map = calculate_pose_metrics(result.pose_landmarks)
+                
+                # print(result.pose_landmarks.landmark[11])
+                # print(result.pose_landmarks.landmark[13])
+                # print(result.pose_landmarks.landmark[15])
+                if(model==1):
+                    #bicep
+                    # wrist,elbow, shoulder(left)
+                    angles = calculate_joint_angle_mediapipe(result.pose_landmarks.landmark[11],result.pose_landmarks.landmark[13],result.pose_landmarks.landmark[15])
+                    angle_text = str(round(angles, 1))
+                    x = int(result.pose_landmarks.landmark[13].x * img.shape[1])
+                    y = int(result.pose_landmarks.landmark[13].y * img.shape[0])
+                    cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)  # for angle in angles:
+                   
+                    #hip shoulder, elbow(left)
+                    angles = calculate_joint_angle_mediapipe(result.pose_landmarks.landmark[23],result.pose_landmarks.landmark[11],result.pose_landmarks.landmark[13])
+                    angle_text = str(round(angles, 1))
+                    isFront = False
+                    if (int(result.pose_landmarks.landmark[13].x*img.shape[1]) < int(result.pose_landmarks.landmark[23].x*img.shape[1])):
+                        isFront = True
+                    # print(isFront)
+                    x = int(result.pose_landmarks.landmark[11].x * img.shape[1]+20)
+                    y = int(result.pose_landmarks.landmark[11].y * img.shape[0]+20)
+                    
+                    if((angles<15 and angles>0 and isFront) or (angles<10 and angles>0 and not isFront)):
+                        cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)  # for angle in angles:
+                    else:
+                        cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)  # for angle in angles:
+                elif(model==2):
+                    #bicep for row 
+                    # wrist,elbow, shoulder(left)
+                    angles = calculate_joint_angle_mediapipe(result.pose_landmarks.landmark[11],result.pose_landmarks.landmark[13],result.pose_landmarks.landmark[15])
+                    angle_text = str(round(angles, 1))
+                    x = int(result.pose_landmarks.landmark[13].x * img.shape[1])
+                    y = int(result.pose_landmarks.landmark[13].y * img.shape[0])
+                    if(angles<80):
+                        cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)  # for angle in angles:
+                    else:
+                        cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)  # for angle in angles:
+                    
 
-            angles = calculate_joint_angle_mediapipe(result.pose_landmarks.landmark[11],result.pose_landmarks.landmark[13],result.pose_landmarks.landmark[15])
-           
-            angle_text = str(round(angles, 1))
-            x = int(result.pose_landmarks.landmark[13].x * img.shape[1])
-            y = int(result.pose_landmarks.landmark[13].y * img.shape[0])
-            cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)  # for angle in angles:
-        
+
+                    #hip shoulder, elbow(left) for row
+                    angles = calculate_joint_angle_mediapipe(result.pose_landmarks.landmark[23],result.pose_landmarks.landmark[11],result.pose_landmarks.landmark[13])
+                    angle_text = str(round(angles, 1))
+                    isFront = False
+                    if (int(result.pose_landmarks.landmark[13].x*img.shape[1]) < int(result.pose_landmarks.landmark[23].x*img.shape[1])):
+                        isFront = True
+                    # print(isFront)
+                    x = int(result.pose_landmarks.landmark[11].x * img.shape[1]+20)
+                    y = int(result.pose_landmarks.landmark[11].y * img.shape[0]+20)
+                    
+                    if((angles<50 and angles>0 and isFront) or (angles<20 and angles>0 and not isFront)):
+                        cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)  # for angle in angles:
+                    else:
+                        cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)  # for angle in angles:
+               
+
+
+
+
+                #ear, shoulder, hip(left)
+                angles = calculate_joint_angle_mediapipe_360(result.pose_landmarks.landmark[7],result.pose_landmarks.landmark[11],result.pose_landmarks.landmark[23])
+                angle_text = str(round(angles, 1))
+                x = int(result.pose_landmarks.landmark[11].x * img.shape[1])
+                y = int(result.pose_landmarks.landmark[11].y * img.shape[0])
+                if(angles>180 and angles<200):
+                    cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)  # for angle in angles:
+                else:
+                    cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)  # for angle in angles:
+
+                #shoulder, hip, knee(left)
+                angles = calculate_joint_angle_mediapipe_360(result.pose_landmarks.landmark[11],result.pose_landmarks.landmark[23],result.pose_landmarks.landmark[25])
+                angle_text = str(round(angles, 1))
+                x = int(result.pose_landmarks.landmark[23].x * img.shape[1])
+                y = int(result.pose_landmarks.landmark[23].y * img.shape[0])
+                if(angles>170 and angles<190):
+                    cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)  # for angle in angles:
+                else:
+                    cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)  # for angle in angles:
+
+                #hip, knee, ankle(left)
+                angles = calculate_joint_angle_mediapipe_360(result.pose_landmarks.landmark[23],result.pose_landmarks.landmark[25],result.pose_landmarks.landmark[27])
+                angle_text = str(round(angles, 1))
+                x = int(result.pose_landmarks.landmark[25].x * img.shape[1])
+                y = int(result.pose_landmarks.landmark[25].y * img.shape[0])
+                if(angles>=170 and angles<180):
+                    cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)  # for angle in angles:
+                else:
+                    cv2.putText(img, angle_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)  # for angle in angles:
+
+
+
         current_time = time.time()
         fps = 1 / (current_time - previous_time)
         previous_time = current_time
@@ -165,6 +287,8 @@ def gen():
         key = cv2.waitKey(20)
         if key == 27:
             break
+
+
 
 def gen_video():
     mpDraw = mp.solutions.drawing_utils
@@ -180,7 +304,7 @@ def gen_video():
    
  
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('output_video/output.mp4', fourcc, fps, (frame_width, frame_height))
+    out = cv2.VideoWriter('output_video/outputMediaPipe.mp4', fourcc, fps, (frame_width, frame_height))
 
     while cap.isOpened():
        
@@ -220,12 +344,20 @@ def gen_video():
     out.release()  # Release the output video writer
     cv2.destroyAllWindows()
 
-@app.route('/video_feed')
-def video_feed():
+@app.route('/video_feed_for_curl')
+def video_feed_for_curl():
     """Video streaming route. Put this in the src attribute of an img tag."""
-    return Response(gen(),
+    print("curl is called ")
+    return Response(gen(1),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
+@app.route('/video_feed_for_row')
+def video_feed_for_row():
+    """Video streaming route. Put this in the src attribute of an img tag."""
+    print("row is called ")
+    return Response(gen(2),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 # =======================MoveNet================================

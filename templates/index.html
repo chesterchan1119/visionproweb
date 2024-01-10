@@ -59,13 +59,122 @@
       </script>
     </nav>
 <br>
-<div class="video-container "style="width: 1000px;">
-    <img src="{{ url_for('video_feed') }}">
+
+<!-- <form id="videoForm" action="/" method="get" enctype="multipart/form-data">
+  <div class="input-group mb-3">
+    <div class="col-auto">
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="api" value="curl" id="mediapipeRadio" onclick="storeSelectedAPI('curl')">
+        <label class="form-check-label" for="mediapipeRadio">Curl</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="api" value="row" id="movenetRadio" onclick="storeSelectedAPI('row')">
+        <label class="form-check-label" for="movenetRadio">Row</label>
+      </div>
+    </div>
+  </div>
+</form> -->
+
+<!-- HTML -->
+<div class="">
+<button type="button" class="btn btn-primary" id="curlBtn" onclick="callApiForCurl()">Bicep Curl</button> 
+<button type="button" class="btn btn-primary" id="rowBtn" onclick="callApiForRow()">Row</button>
 </div>
+<div id="responseContainer">
+
+    <img id="videoFeed" src="">
+</div>
+<!-- <div id="videoContainer1" class="video-container" style="width: 1000px; display: none;">
+  <img id="videoFeed1" src="{{ url_for('video_feed_for_curl')}}">
+</div>
+<div id="videoContainer2" class="video-container" style="width: 1000px; display: none;">
+  <img id="videoFeed2" src="{{ url_for('video_feed_for_row')}}">
+</div> -->
+
+<script>
+// JavaScript
+function callApiForCurl() {
+  fetch('/video_feed_for_curl')
+    .then(response => {
+      const videoFeed = document.getElementById('videoFeed');
+      videoFeed.src = response.url;  // 將API回應的URL設置為影片流的src屬性
+    })
+    .catch(error => {
+      console.error(error);
+    });
+}
+
+function callApiForRow() {
+  fetch('/video_feed_for_row')
+    .then(response => {
+      const videoFeed = document.getElementById('videoFeed');
+      videoFeed.src = response.url;  // 將API回應的URL設置為影片流的src屬性
+    })
+    .catch(error => {
+      console.error(error);
+    });
+}
+
+</script>
+
+<!-- <script>
+  function storeSelectedAPI(api) {
+    sessionStorage.setItem('selected_api', api);
+    refreshVideoContainer();
+  }
+
+  function refreshVideoContainer() {
+    var selectedAPI = sessionStorage.getItem('selected_api');
+    if (selectedAPI) {
+      var videoContainer = document.getElementById('videoContainer1');
+      var videoFeed = document.getElementById('videoFeed1');
+
+      // Set the correct API endpoint based on the selected API
+      var apiEndpoint = selectedAPI === 'curl' ? '/video_feed_for_curl' : '/video_feed_for_row';
+
+      // Fetch the updated video feed URL
+      fetch(apiEndpoint)
+        .then(response => {
+          if (response.ok) {
+            return response.text();
+          } else {
+            throw new Error('Network response was not ok');
+          }
+        })
+        .then(data => {
+          // Update the video feed src
+          videoFeed.src = data;
+
+          // Show the video container
+          videoContainer.style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+  }
+  
+  // Refresh the video container on page load
+  refreshVideoContainer();
+</script> -->
+
+<!-- <script>
+  function storeSelectedAPI(api) {
+    sessionStorage.setItem('selected_api', api);
+  }
+
+  // Check if there is a selected API in the session storage
+  var selectedAPI = sessionStorage.getItem('selected_api');
+  if (selectedAPI) {
+    // Show the corresponding video container based on the selected API
+    var selectedContainer = document.getElementById(`videoContainer${selectedAPI === 'curl' ? '1' : '2'}`);
+    selectedContainer.style.display = 'block';
+  }
+</script> -->
+
 <br>
+
 <br><br>
-
-
 <div class = "container"></div>
 <table class="table mt-5">
     <thead>
