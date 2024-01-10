@@ -26,38 +26,18 @@ Once you installed all the required packages you can type in the command line fr
 
   `python app.py`
 
-and click on the link that the you will see on the prompt.
+## Live Demo
+<img width="310" alt="image" src="https://github.com/chesterchan1119/visionproweb/assets/110362704/71878992-2465-4c8b-a516-122442212c04">
 
-## Usage
 
-Either a single pose our multiple poses can be estimated from an image. Each methodology has its own algorithm and set of parameters.
+## Landmarks Topology
+<img width="451" alt="image" src="https://github.com/chesterchan1119/visionproweb/assets/110362704/5c18fb1e-d026-4783-8ff0-e31ee265d01d">
 
-| Id             | Part                                                                |
-| ----------------- | ------------------------------------------------------------------ |
-| 0 | nose |
-| 1 | leftEye |
-| 2 | rightEye |
-| 3 | leftEar |
-| 4 | rightEar |
-| 5 | leftShoulder |
-| 6 | rightShoulder |
-| 7 | leftElbow |
-| 8 | rightElbow |
-| 9 | leftWrist |
-| 10 | rightWrist |
-| 11 | leftHip |
-| 12 | rightHip |
-| 13 | leftKnee |
-| 14 | rightKnee |
-| 15 | leftAnkle |
-| 16 | rightAnkle |
-
-## Developing the Model for demos
-Details for how to run the model are included in the folder.
-if anything worng please correct me.
+## Model Performance Tab-to-Tab Comparison
+<img width="712" alt="image" src="https://github.com/chesterchan1119/visionproweb/assets/110362704/89e512bf-5602-47ba-b9af-73a125e79354">
 
 ## Credits
-Credits for this code go to Google
+Credits for blazepose and mediapipe backbone go to Google
 
 
 
