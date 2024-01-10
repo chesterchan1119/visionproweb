@@ -1,5 +1,8 @@
+# Gymnastic Pose Estimation with MediaPipe Pose, Movenet and Openpose 
 
-# Pose Detection by using Mediapipe
+This is a prototype and mainly focus on the model performance comparison.
+
+## Pose Detection by using Mediapipe
 Run real-time pose estimation in the browser using Mediapipe Library can be used to estimate either a single pose or multiple poses, meaning there is a version of the algorithm that can detect only one person in an image/video and one version that can detect multiple persons in an image/video.
 
 This is a Pure Mediapipe Library implementation of PoseNet. Thank you Google for your flexible and intuitive APIs.
